@@ -128,7 +128,7 @@ if __name__ == '__main__':
     out_fpath = os.path.join(dpath, f"secretion_knockout_{args.deltype}_{args.uptake}_{args.secretion}.csv")
 
     with open(args.list_file) as fh:
-        del_list = fh.readlines()
+        del_list = [i.rstrip() for i in fh.readlines()]
         
     model = load_model()
     resdf = _gene_deletion_feeding(model, args.uptake, args.secretion, args.bound, args.deltype, del_list)
