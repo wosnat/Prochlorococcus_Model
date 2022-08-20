@@ -78,26 +78,32 @@ def load_model(remove_blocked = False):
 
 #double_gene_deletion()
 
-def _gene_deletion_feeding(model, uptake1, sec1, maxflux):
+def _gene_deletion_feeding(model, uptake1, sec1, maxflux, del_type, del_list):
     with model:
         medium = model.medium
         medium["AmmoniaEX"] = 0.0
         medium[uptake1] = 1000.0
         model.medium = medium
         model.reactions.get_by_id(uptake1).upper_bound = -1e-5
-        model.reactions.get_by_id(sec1).upper_bound = maxflux
-        model.reactions.get_by_id(sec1).lower_bound = maxflux
+        if sec1 is not None:
+            model.reactions.get_by_id(sec1).upper_bound = maxflux
+            model.reactions.get_by_id(sec1).lower_bound = maxflux
+        model.reactions.BIOMASS.lower_bound = 1e-5
+
         #model.reactions.BIOMASS.upper_bound = 1e-2
         #model
         solution = model.optimize()
         print(uptake1, sec1, model.summary())
-        df = single_gene_deletion(model, processes=10)
+        if del_type == 'gene':
+            df = single_gene_deletion(model, processes=10, gene_list=del_list)
+        else:
+            df = single_reaction_deletion(model, processes=10, gene_list=del_list)
+        
         df['uptake'] = uptake1
         df['secretion'] = sec1
         df = df.loc[df.status != 'optimal']
         print(df.head())
         return df
-
 
 
 
@@ -107,9 +113,11 @@ if __name__ == '__main__':
     # def generate_json_and_run_from_X(X,  json_dpath, out_dpath, out_fprefix, timeout=10*60):
     parser = argparse.ArgumentParser(description='run gene knockouts to find uptake/secretion pathways.')
     parser.add_argument('--uptake', help='uptake reaction', required=True)
-    parser.add_argument('--secretion', help='secretion reaction', required=True)
-    parser.add_argument('--bound', help='secretion bound', required=True, type=float)
+    parser.add_argument('--secretion', help='secretion reaction', default=None)
+    parser.add_argument('--bound', help='secretion bound', default=0, type=float)
     parser.add_argument("--out_dpath", help="output dir", default='.')
+    parser.add_argument('--deltype', help='deletion type gene/reaction', required=True)
+    parser.add_argument('--list_file', help='file with a list of items to delete (one in each line)', required=True)
     
     args = parser.parse_args()
     dpath = args.out_dpath
@@ -117,10 +125,13 @@ if __name__ == '__main__':
         os.makedirs(dpath, exist_ok=True)
     else:
         dpath = '.'
-    out_fpath = os.path.join(dpath, f"secretion_knockout_1gene_{args.uptake}_{args.secretion}.csv")
+    out_fpath = os.path.join(dpath, f"secretion_knockout_{args.deltype}_{args.uptake}_{args.secretion}.csv")
 
+    with open(args.list_file) as fh:
+        del_list = fh.readlines()
+        
     model = load_model()
-    resdf = _gene_deletion_feeding(model, args.uptake, args.secretion, args.bound)
+    resdf = _gene_deletion_feeding(model, args.uptake, args.secretion, args.bound, args.deltype, del_list)
     resdf.to_csv(out_fpath)
 
 
