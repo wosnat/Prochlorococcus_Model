@@ -96,8 +96,12 @@ def _gene_deletion_feeding(model, uptake1, sec1, maxflux, del_type, del_list):
         print(uptake1, sec1, model.summary())
         if del_type == 'gene':
             df = single_gene_deletion(model, processes=10, gene_list=del_list)
+        elif del_type == '2gene':
+            df = double_gene_deletion(model, processes=10, gene_list1=del_list, gene_list2=del_list)
+        elif del_type == 'reaction':
+            df = single_reaction_deletion(model, processes=10, reaction_list=del_list)
         else:
-            df = single_reaction_deletion(model, processes=10, gene_list=del_list)
+            df = double_gene_deletion(model, processes=10, reaction_list1=del_list, reaction_list2=del_list)
         
         df['uptake'] = uptake1
         df['secretion'] = sec1
