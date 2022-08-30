@@ -162,3 +162,4 @@ cython_debug/
 #
 #
 gene_knockout_secreted_18082022/
+N_Starvation/data/*_knockout_*/

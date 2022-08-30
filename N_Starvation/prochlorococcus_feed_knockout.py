@@ -105,7 +105,7 @@ def _gene_deletion_feeding(model, uptake1, sec1, maxflux, del_type, del_list):
         
         df['uptake'] = uptake1
         df['secretion'] = sec1
-        df = df.loc[df.status != 'optimal']
+        df = df.loc[(df.status != 'optimal') | (df.growth <= 1e-5)]
         print(df.head())
         return df
 
